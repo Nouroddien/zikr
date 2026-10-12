@@ -75,6 +75,7 @@ class _ZikrAppState extends ConsumerState<ZikrApp> with WidgetsBindingObserver {
     final ref = this.ref;
     final settings = ref.watch(appSettingsProvider);
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
       locale: settings.locale,
       supportedLocales: AppLocalizations.supportedLocales,
