@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_animations.dart';
 import '../../core/widgets/responsive_content.dart';
 import '../../l10n/app_localizations.dart';
 import 'main_shell.dart';
@@ -117,71 +118,76 @@ class _SebhaScreenState extends State<SebhaScreen>
                       child: Center(
                         child: ScaleTransition(
                           scale: _scale,
-                          child: SizedBox(
-                            width: min(
-                              MediaQuery.sizeOf(context).width * 0.67,
-                              285,
-                            ),
-                            height: min(
-                              MediaQuery.sizeOf(context).width * 0.67,
-                              285,
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox.expand(
-                                  child: CircularProgressIndicator(
-                                    value: progress,
-                                    strokeWidth: 8,
-                                    backgroundColor: AppColors.teal.withValues(
-                                      alpha: 0.13,
-                                    ),
-                                    valueColor: const AlwaysStoppedAnimation(
-                                      AppColors.gold,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  margin: const EdgeInsets.all(14),
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: LinearGradient(
-                                      colors: [AppColors.ocean, AppColors.navy],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
+                          child: PulsingGlow(
+                            glowColor: _count >= _target
+                                ? AppColors.tealGlow
+                                : AppColors.goldGlow,
+                            child: SizedBox(
+                              width: min(
+                                MediaQuery.sizeOf(context).width * 0.67,
+                                285,
+                              ),
+                              height: min(
+                                MediaQuery.sizeOf(context).width * 0.67,
+                                285,
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  SizedBox.expand(
+                                    child: CircularProgressIndicator(
+                                      value: progress,
+                                      strokeWidth: 9,
+                                      backgroundColor: AppColors.teal.withValues(
+                                        alpha: 0.13,
+                                      ),
+                                      valueColor: const AlwaysStoppedAnimation(
+                                        AppColors.gold,
+                                      ),
                                     ),
                                   ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        _count >= _target
-                                            ? l10n.done
-                                            : l10n.tapToCount,
-                                        style: const TextStyle(
-                                          color: AppColors.muted,
-                                        ),
+                                  Container(
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    margin: const EdgeInsets.all(14),
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [AppColors.ocean, AppColors.navy],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
                                       ),
-                                      Text(
-                                        '$_count',
-                                        style: const TextStyle(
-                                          color: AppColors.white,
-                                          fontSize: 58,
-                                          fontWeight: FontWeight.w700,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          _count >= _target
+                                              ? l10n.done
+                                              : l10n.tapToCount,
+                                          style: const TextStyle(
+                                            color: AppColors.muted,
+                                          ),
                                         ),
-                                      ),
-                                      Text(
-                                        '${l10n.target}: $_target',
-                                        style: const TextStyle(
-                                          color: AppColors.gold,
+                                        AnimatedCounterText(
+                                          count: _count,
+                                          style: const TextStyle(
+                                            color: AppColors.white,
+                                            fontSize: 58,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                        Text(
+                                          '${l10n.target}: $_target',
+                                          style: const TextStyle(
+                                            color: AppColors.gold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

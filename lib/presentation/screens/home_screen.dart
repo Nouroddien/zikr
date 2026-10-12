@@ -21,6 +21,7 @@ import '../../l10n/app_localizations.dart';
 import 'main_shell.dart';
 import 'screen_labels.dart';
 import 'azkar_screens.dart';
+import '../../data/providers/islamic_api_providers.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({required this.onNavigate, super.key});
@@ -168,6 +169,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       );
                     },
                   ),
+                  const SizedBox(height: 24),
+                  const _DailyHadithCard(),
                 ],
               ),
             ),
@@ -532,6 +535,91 @@ class _ExploreCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _DailyHadithCard extends ConsumerWidget {
+  const _DailyHadithCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hadithAsync = ref.watch(randomHadithProvider);
+
+    return hadithAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (hadith) {
+        if (hadith == null || hadith.arab.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppSectionTitle('حديث نبوي شريف'),
+            const SizedBox(height: 10),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  children: [
+                    Text(
+                      hadith.arab,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.8,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'صحيح البخاري',
+                          style: TextStyle(
+                            color: AppColors.gold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.copy_outlined, size: 18),
+                              color: AppColors.muted,
+                              tooltip: 'نسخ',
+                              onPressed: () {
+                                Clipboard.setData(ClipboardData(text: hadith.arab));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('تم نسخ الحديث بنجاح'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.share_outlined, size: 18),
+                              color: AppColors.muted,
+                              tooltip: 'مشاركة',
+                              onPressed: () => SharePlus.instance.share(
+                                ShareParams(text: hadith.arab),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

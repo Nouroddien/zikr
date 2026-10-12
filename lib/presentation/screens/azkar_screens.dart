@@ -12,6 +12,7 @@ import '../../domain/entities/zekr.dart';
 import '../../l10n/app_localizations.dart';
 import 'main_shell.dart';
 import 'screen_labels.dart';
+import 'hisn_screens.dart';
 
 const _categoryOrder = [
   'morning',
@@ -86,6 +87,29 @@ class AzkarCategoriesScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: 18),
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(
+                            Icons.menu_book_outlined,
+                            color: AppColors.teal,
+                          ),
+                          title: const Text(
+                            'حصن المسلم (132 باباً)',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: const Text(
+                            'تصفح جميع الأدعية والأذكار من السنة النبوية',
+                            style: TextStyle(color: AppColors.muted, fontSize: 12),
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const HisnChaptersScreen(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Card(
                         child: ListTile(
                           leading: const Icon(

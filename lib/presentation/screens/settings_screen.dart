@@ -14,6 +14,8 @@ import '../../l10n/app_localizations.dart';
 import 'battery_help_screen.dart';
 import 'main_shell.dart';
 import 'notification_permission_screen.dart';
+import '../../data/models/remote_prayer_city.dart';
+import '../../data/providers/islamic_api_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -368,57 +370,227 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _chooseLocation(BuildContext context, WidgetRef ref) async {
-    final l10n = AppLocalizations.of(context)!;
     await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.my_location, color: AppColors.teal),
-              title: Text(l10n.useCurrentLocation),
-              onTap: () async {
-                Navigator.pop(context);
-                try {
-                  final location = await const LocationService()
-                      .currentLocation();
-                  await ref
-                      .read(appSettingsProvider.notifier)
-                      .setLocation(
-                        latitude: location.latitude,
-                        longitude: location.longitude,
-                        cityName: location.cityName,
-                      );
-                  await _reschedulePrayers(ref);
-                } on LocationPermissionDenied {
-                  if (context.mounted) {
-                    showAppMessage(context, l10n.locationPermission);
-                  }
-                }
-              },
-            ),
-            for (final city in _settingsCities)
-              ListTile(
-                leading: const Icon(
-                  Icons.location_city_outlined,
-                  color: AppColors.gold,
-                ),
-                title: Text(city.label(l10n)),
-                onTap: () async {
-                  await ref
-                      .read(appSettingsProvider.notifier)
-                      .setLocation(
-                        latitude: city.latitude,
-                        longitude: city.longitude,
-                        cityName: city.label(l10n),
-                      );
-                  if (context.mounted) Navigator.pop(context);
-                  await _reschedulePrayers(ref);
-                },
+      builder: (context) => _CitySelectionSheet(
+        onSelected: (cityName, lat, lng) async {
+          await ref.read(appSettingsProvider.notifier).setLocation(
+                latitude: lat,
+                longitude: lng,
+                cityName: cityName,
+              );
+          await _reschedulePrayers(ref);
+        },
+      ),
+    );
+  }
+}
+
+class _CitySelectionSheet extends ConsumerStatefulWidget {
+  const _CitySelectionSheet({required this.onSelected});
+
+  final Future<void> Function(String name, double lat, double lng) onSelected;
+
+  @override
+  ConsumerState<_CitySelectionSheet> createState() => _CitySelectionSheetState();
+}
+
+class _CitySelectionSheetState extends ConsumerState<_CitySelectionSheet> {
+  final _searchController = TextEditingController();
+  String _query = '';
+  List<RemoteCity>? _searchedCities;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _performSearch(String query) async {
+    final trimmed = query.trim();
+    if (trimmed == _query) return;
+    setState(() {
+      _query = trimmed;
+      if (trimmed.isEmpty) {
+        _searchedCities = null;
+        _isLoading = false;
+      } else {
+        _isLoading = true;
+      }
+    });
+
+    if (trimmed.isEmpty) return;
+
+    try {
+      final cities = await ref
+          .read(islamicApiRepositoryProvider)
+          .getCities(query: trimmed);
+      if (mounted && _query == trimmed) {
+        setState(() {
+          _searchedCities = cities;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              Text(
+                l10n.chooseLocation,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن أي مدينة في العالم (عبر الإنترنت)...',
+                  prefixIcon: const Icon(Icons.search, color: AppColors.teal),
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _performSearch('');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: isDark ? AppColors.navy : AppColors.ivory,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: _performSearch,
+              ),
+              const SizedBox(height: 10),
+              if (_isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.teal),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    children: [
+                      if (_searchedCities != null) ...[
+                        if (_searchedCities!.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(
+                              child: Text(
+                                'لم يتم العثور على نتائج للمدينة المحددة',
+                                style: TextStyle(color: AppColors.muted),
+                              ),
+                            ),
+                          )
+                        else
+                          for (final city in _searchedCities!)
+                            ListTile(
+                              leading: const Icon(
+                                Icons.location_on_outlined,
+                                color: AppColors.teal,
+                              ),
+                              title: Text(city.name),
+                              subtitle: Text(
+                                '${city.lat.toStringAsFixed(2)}, ${city.lng.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  color: AppColors.muted,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await widget.onSelected(
+                                  city.name,
+                                  city.lat,
+                                  city.lng,
+                                );
+                              },
+                            ),
+                      ] else ...[
+                        ListTile(
+                          leading: const Icon(Icons.my_location, color: AppColors.teal),
+                          title: Text(l10n.useCurrentLocation),
+                          onTap: () async {
+                            Navigator.pop(context);
+                            try {
+                              final location = await const LocationService()
+                                  .currentLocation();
+                              await widget.onSelected(
+                                location.cityName,
+                                location.latitude,
+                                location.longitude,
+                              );
+                            } on LocationPermissionDenied {
+                              if (context.mounted) {
+                                showAppMessage(context, l10n.locationPermission);
+                              }
+                            }
+                          },
+                        ),
+                        const Divider(height: 1),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Text(
+                            'مدن شائعة',
+                            style: TextStyle(
+                              color: AppColors.muted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        for (final city in _settingsCities)
+                          ListTile(
+                            leading: const Icon(
+                              Icons.location_city_outlined,
+                              color: AppColors.gold,
+                            ),
+                            title: Text(city.label(l10n)),
+                            onTap: () async {
+                              Navigator.pop(context);
+                              await widget.onSelected(
+                                city.label(l10n),
+                                city.latitude,
+                                city.longitude,
+                              );
+                            },
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

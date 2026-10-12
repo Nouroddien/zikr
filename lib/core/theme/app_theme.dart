@@ -12,6 +12,37 @@ abstract final class AppColors {
   static const darkMuted = Color(0xFF667896);
   static const dividerDark = Color(0xFF26364D);
   static const dividerLight = Color(0xFFE6E6E3);
+
+  // Surface & Accent Tokens
+  static const cardDark = Color(0xFF12223A);
+  static const cardLight = Color(0xFFFFFFFF);
+  static const goldGlow = Color(0x3DF0B94F);
+  static const tealGlow = Color(0x3335B7A5);
+
+  // Gradients
+  static const prayerCardGradientDark = LinearGradient(
+    colors: [Color(0xFF142742), Color(0xFF1A3961), Color(0xFF10253E)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const prayerCardGradientLight = LinearGradient(
+    colors: [Color(0xFFFFFFFF), Color(0xFFF4F8FB)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const goldGradient = LinearGradient(
+    colors: [Color(0xFFF7C967), Color(0xFFE6A734)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const tealGradient = LinearGradient(
+    colors: [Color(0xFF39C9B5), Color(0xFF239789)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }
 
 abstract final class AppTheme {
@@ -25,7 +56,7 @@ abstract final class AppTheme {
       brightness: brightness,
       primary: AppColors.gold,
       secondary: AppColors.teal,
-      surface: isDark ? AppColors.navy : AppColors.white,
+      surface: isDark ? AppColors.cardDark : AppColors.cardLight,
       error: const Color(0xFFE57373),
     );
     final textColor = isDark ? AppColors.white : AppColors.navy;
@@ -36,10 +67,18 @@ abstract final class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: isDark ? AppColors.midnight : AppColors.ivory,
       fontFamily: 'NotoNaskhArabic',
+      splashFactory: InkSparkle.splashFactory,
       textTheme: Typography.material2021().black.apply(
         bodyColor: textColor,
         displayColor: textColor,
         fontFamily: 'NotoNaskhArabic',
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: ZoomPageTransitionsBuilder(),
+        },
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: isDark ? AppColors.midnight : AppColors.ivory,
@@ -49,13 +88,15 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
       ),
       cardTheme: CardThemeData(
-        color: isDark ? AppColors.navy : AppColors.white,
-        elevation: isDark ? 0 : 1,
+        color: isDark ? AppColors.cardDark : AppColors.white,
+        elevation: isDark ? 0 : 2,
+        shadowColor: isDark ? Colors.black38 : const Color(0x12000000),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
           side: BorderSide(
             color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+            width: 1,
           ),
         ),
       ),
@@ -74,6 +115,9 @@ abstract final class AppTheme {
           return TextStyle(
             fontFamily: 'NotoNaskhArabic',
             fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.bold
+                : FontWeight.normal,
             color: states.contains(WidgetState.selected)
                 ? AppColors.gold
                 : (isDark ? AppColors.muted : AppColors.darkMuted),
@@ -82,17 +126,22 @@ abstract final class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         backgroundColor: isDark ? AppColors.navy : AppColors.white,
-        contentTextStyle: TextStyle(color: textColor),
+        contentTextStyle: TextStyle(color: textColor, fontFamily: 'NotoNaskhArabic'),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.gold,
           foregroundColor: AppColors.midnight,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+          textStyle: const TextStyle(
+            fontFamily: 'NotoNaskhArabic',
+            fontWeight: FontWeight.bold,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
         ),
       ),
       switchTheme: SwitchThemeData(
